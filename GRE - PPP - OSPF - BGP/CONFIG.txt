@@ -1,0 +1,142 @@
+		===============================================================
+			Konfigurasi PAP - CHAP - GRE - OSPF - ACL - eBGP
+		===============================================================
+
+< Router Biawak >
+	- Konfigurasi IP Address
+		int s0/0/0
+		ip add 192.168.4.1 255.255.255.0
+		no sh (HDLC)
+		exit
+		int g0/1
+		ip add 192.168.3.1 255.255.255.0
+		no sh
+		exit
+
+	- Konfigurasi Routing OSPF
+		router ospf 2020
+		router-id 1.1.1.1	
+		net 192.168.3.0 0.0.0.255 area 1
+		net 192.168.4.0 0.0.0.255 area 0
+
+	- Konfigurasi PAP 
+		username Komodo password Lombok
+		int s0/0/0
+		encapsulation ppp
+ 		ppp authentication pap
+		ppp pap sent-username Biawak password Lombok
+		sh ip int br
+
+	- Konfigurasi GRE
+		int tunnel 1
+		ip add 50.50.50.2 255.255.255.0
+		no sh
+		tunnel source s0/0/0
+		tunnel destination 192.168.5.1
+		tunnel mode gre ip
+		ip route 192.168.6.0 255.255.255.0 50.50.50.2
+
+	- Konfigurasi ACL
+		ip access-list extended himtekk
+		deny tcp host 192.168.3.2 10.10.10.0 0.0.0.255 eq www
+		permit ip any any
+		exit
+		int g0/1
+		ip access-group himtekk in
+	
+
+< Router Komodo >
+	- Konfigurasi IP Address
+		int s0/0/0
+		ip add 192.168.4.2 255.255.255.0
+		no sh
+		exit
+		int s0/0/1
+		ip add 192.168.5.2 255.255.255.0
+		no sh
+		exit
+		int s0/1/1
+		ip add 192.168.100.1 255.255.255.248
+
+	- Konfigurasi Routing OSPF
+		router ospf 2020
+		router-id 2.2.2.2	
+		net 192.168.4.0 0.0.0.255 area 0
+		net 192.168.5.0 0.0.0.255 area 0
+	
+	- Konfigurasi PAP
+		username Biawak password Lombok
+		int s0/0/0
+		encapsulation ppp
+ 		ppp authentication pap
+		ppp pap sent-username Komodo password Lombok
+		do sh ip int br
+
+	- Konfigurasi CHAP
+		username Kadal password bubu
+		int s0/0/1
+		encapsulation ppp
+ 		ppp authentication chap
+		do sh ip int br
+
+	- Konfigurasi BGP
+		router bgp 100
+ 		bgp log-neighbor-changes
+ 		no synchronization
+ 		neighbor 192.168.100.2 remote-as 200
+ 		network 192.168.4.0
+ 		network 192.168.5.0
+ 		redistribute ospf 2020
+
+< Router Kadal >
+	- Konfigurasi IP Address
+		int s0/0/1 
+		ip add 192.168.5.1 255.255.255.0
+		no sh
+		exit
+		int g0/1
+		ip add 192.168.6.1 255.255.255.0
+		no sh
+		exit
+
+	- Konfigurasi Routing OSPF
+		router ospf 2020
+		router-id 3.3.3.3	
+		net 192.168.5.0 0.0.0.255 area 0
+		net 192.168.6.0 0.0.0.255 area 2
+
+	- Konfigurasi CHAP 
+		username Komodo password himtekk
+		int s0/0/1
+		encapsulation ppp
+ 		ppp authentication chap
+		sh ip int br
+
+	- Konfigurasi GRE
+		int tunnel 1
+		ip add 50.50.50.1 255.255.255.0
+		no sh
+		tunnel source s0/0/1
+		tunnel destination 192.168.4.1
+		tunnel mode gre ip 
+		exit
+		ip route 192.168.3.0 255.255.255.0 50.50.50.1
+
+< Router Internet >
+	- Konfigurasi IP Address
+		int g0/0	
+		ip add 10.10.10.1 255.2552.55.0 
+		no sh
+		exit
+		int s0/0/0
+		ip add 192.168.100.2 255.255.255.248
+
+	- Konfigurasi BGP
+		router bgp 200
+		bgp log-neighbor-changes
+ 		no synchronization
+ 		neighbor 192.168.100.1 remote-as 100
+ 		network 10.10.10.0 mask 255.255.255.0
+ 		redistribute ospf 2020 
+
+
